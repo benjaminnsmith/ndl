@@ -20,10 +20,8 @@ Promise.all([
     let cubes = [];
     let depthMap = null;
     let imageData = null;
-    let workSection;
 
     // GUI controls
-    const gui = new dat.GUI();
     const params = {
         cubeDensity: 0.5,
         rotationSpeed: 0.5,
@@ -39,28 +37,13 @@ Promise.all([
     function init() {
         console.log('Initializing scene...');
         
-        // Get work section
-        workSection = document.querySelector('.work-section');
-        if (!workSection) {
-            console.error('Work section not found. Make sure you have a div with class "work-section"');
-            return;
-        }
-        console.log('Work section found:', workSection);
-
         // Scene setup
         scene = new THREE.Scene();
         
         // Get container dimensions
-        const container = document.getElementById('canvas');
-        if (!container) {
-            console.error('Canvas container not found. Make sure you have a div with id "canvas"');
-            return;
-        }
-        console.log('Canvas container found:', container);
-        
+        const workSection = document.querySelector('.work-section');
         const width = workSection.clientWidth;
         const height = workSection.clientHeight;
-        console.log('Container dimensions:', width, height);
         
         // Camera setup
         camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
@@ -74,8 +57,10 @@ Promise.all([
         });
         renderer.setSize(width, height);
         renderer.setPixelRatio(window.devicePixelRatio);
-        container.appendChild(renderer.domElement);
-        console.log('Renderer created and added to container');
+        
+        // Add canvas to the canvas div
+        const canvasContainer = document.querySelector('.canvas');
+        canvasContainer.appendChild(renderer.domElement);
 
         // Add OrbitControls
         controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -85,15 +70,29 @@ Promise.all([
         controls.enablePan = true;
         controls.enableRotate = true;
 
-        // Limit controls to work section
+        // Limit controls
         controls.target.set(0, 0, 0);
         controls.minDistance = 2;
         controls.maxDistance = 10;
         controls.maxPolarAngle = Math.PI / 2;
-        console.log('Controls initialized');
 
         // Setup GUI
-        setupGUI();
+        const gui = new dat.GUI({ autoPlace: false });
+        gui.domElement.style.position = 'absolute';
+        gui.domElement.style.top = '20px';
+        gui.domElement.style.right = '20px';
+        workSection.appendChild(gui.domElement);
+
+        gui.add(params, 'cubeDensity', 0, 1).onChange(updateCubes);
+        gui.add(params, 'rotationSpeed', 0, 2);
+        gui.add(params, 'pulseStrength', 0, 1);
+        gui.add(params, 'zDepthMultiplier', 0, 2);
+        gui.add(params, 'cubeSize', 0.1, 2);
+        gui.add(params, 'contrastThreshold', 0, 1).onChange(updateCubes);
+        
+        const colorModeFolder = gui.addFolder('Color Settings');
+        colorModeFolder.add(params, 'colorMode', ['monochrome', 'sampled', 'custom']);
+        colorModeFolder.addColor(params, 'customColor');
 
         // Handle window resize
         window.addEventListener('resize', onWindowResize, false);
@@ -127,46 +126,15 @@ Promise.all([
         fileInput.addEventListener('change', handleFileUpload);
     }
 
-    // Setup GUI controls
-    function setupGUI() {
-        // Create GUI container within work-section
-        const guiContainer = document.createElement('div');
-        guiContainer.style.position = 'absolute';
-        guiContainer.style.top = '20px';
-        guiContainer.style.right = '20px';
-        guiContainer.style.zIndex = '100';
-        workSection.appendChild(guiContainer);
-        
-        // Add GUI controls
-        gui.add(params, 'cubeDensity', 0, 1).onChange(updateCubes);
-        gui.add(params, 'rotationSpeed', 0, 2);
-        gui.add(params, 'pulseStrength', 0, 1);
-        gui.add(params, 'zDepthMultiplier', 0, 2);
-        gui.add(params, 'cubeSize', 0.1, 2);
-        gui.add(params, 'contrastThreshold', 0, 1).onChange(updateCubes);
-        
-        const colorModeFolder = gui.addFolder('Color Settings');
-        colorModeFolder.add(params, 'colorMode', ['monochrome', 'sampled', 'custom']);
-        colorModeFolder.addColor(params, 'customColor');
-
-        // Move GUI container to work-section
-        guiContainer.appendChild(gui.domElement);
-    }
-
     // Handle window resize
     function onWindowResize() {
-        if (!workSection) return;
-        
+        const workSection = document.querySelector('.work-section');
         const width = workSection.clientWidth;
         const height = workSection.clientHeight;
 
-        // Update camera
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
-
-        // Update renderer
         renderer.setSize(width, height);
-        renderer.setPixelRatio(window.devicePixelRatio);
     }
 
     // Process image and create depth map
@@ -179,13 +147,11 @@ Promise.all([
         ctx.drawImage(image, 0, 0);
         imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         
-        // Create depth map from image data
         depthMap = new Float32Array(canvas.width * canvas.height);
         for (let i = 0; i < imageData.data.length; i += 4) {
             const r = imageData.data[i];
             const g = imageData.data[i + 1];
             const b = imageData.data[i + 2];
-            // Calculate contrast value (simple luminance)
             depthMap[i / 4] = (r + g + b) / (255 * 3);
         }
         
@@ -194,7 +160,6 @@ Promise.all([
 
     // Update cubes based on current parameters
     function updateCubes() {
-        // Clear existing cubes
         cubes.forEach(cube => scene.remove(cube));
         cubes = [];
 
@@ -223,7 +188,6 @@ Promise.all([
 
     // Create a single cube
     function createCube(depth) {
-        // Define vertices for a cube
         const vertices = new Float32Array([
             // Front face
             -0.5, -0.5,  0.5,
@@ -238,7 +202,6 @@ Promise.all([
             -0.5,  0.5, -0.5,
         ]);
 
-        // Define indices for connecting vertices (edges)
         const indices = new Uint16Array([
             // Front face
             0, 1, 1, 2, 2, 3, 3, 0,
@@ -248,16 +211,14 @@ Promise.all([
             0, 4, 1, 5, 2, 6, 3, 7
         ]);
 
-        // Create geometry
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
         geometry.setIndex(new THREE.BufferAttribute(indices, 1));
         
-        // Create material
         let material;
         if (params.colorMode === 'monochrome') {
             material = new THREE.LineBasicMaterial({ color: 0xffffff });
-        } else if (params.colorMode === 'sampled') {
+        } else if (params.colorMode === 'sampled' && imageData) {
             const index = Math.floor(depth * (imageData.data.length / 4));
             const color = new THREE.Color(
                 imageData.data[index * 4] / 255,
@@ -269,17 +230,13 @@ Promise.all([
             material = new THREE.LineBasicMaterial({ color: params.customColor });
         }
 
-        // Create the cube
         const cube = new THREE.LineSegments(geometry, material);
-        
-        // Scale the cube
         cube.scale.set(params.cubeSize, params.cubeSize, params.cubeSize);
         
-        // Set random rotation speeds
         cube.userData.rotationSpeed = {
-            x: (Math.random() - 0.5) * params.rotationSpeed,
-            y: (Math.random() - 0.5) * params.rotationSpeed,
-            z: (Math.random() - 0.5) * params.rotationSpeed
+            x: (Math.random() - 0.5) * 0.02,
+            y: (Math.random() - 0.5) * 0.02,
+            z: (Math.random() - 0.5) * 0.02
         };
         
         return cube;
@@ -293,12 +250,12 @@ Promise.all([
 
         cubes.forEach(cube => {
             // Rotation
-            cube.rotation.x += cube.userData.rotationSpeed.x;
-            cube.rotation.y += cube.userData.rotationSpeed.y;
-            cube.rotation.z += cube.userData.rotationSpeed.z;
+            cube.rotation.x += cube.userData.rotationSpeed.x * params.rotationSpeed;
+            cube.rotation.y += cube.userData.rotationSpeed.y * params.rotationSpeed;
+            cube.rotation.z += cube.userData.rotationSpeed.z * params.rotationSpeed;
 
             // Pulse animation
-            const scale = 1 + Math.sin(time * 2) * params.pulseStrength;
+            const scale = 1 + Math.sin(time * 2) * params.pulseStrength * 0.2;
             cube.scale.set(scale, scale, scale);
         });
 
