@@ -24,7 +24,7 @@ function init() {
     
     // Get container dimensions from work-section
     const workSection = document.querySelector('.work-section');
-    const container = document.getElementById('canvas-container');
+    const container = document.getElementById('canvas');
     const width = workSection.clientWidth;
     const height = workSection.clientHeight;
     
