@@ -9,14 +9,37 @@ const loadScript = (url) => {
     });
 };
 
+// Function to wait for element
+const waitForElement = (selector) => {
+    return new Promise(resolve => {
+        if (document.querySelector(selector)) {
+            return resolve(document.querySelector(selector));
+        }
+
+        const observer = new MutationObserver(mutations => {
+            if (document.querySelector(selector)) {
+                observer.disconnect();
+                resolve(document.querySelector(selector));
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    });
+};
+
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait for all scripts to load before initializing
+    // Wait for all scripts and work-section to load before initializing
     Promise.all([
         loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'),
         loadScript('https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js'),
-        loadScript('https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js')
-    ]).then(() => {
+        loadScript('https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.7/dat.gui.min.js'),
+        waitForElement('.work-section'),
+        waitForElement('.canvas')
+    ]).then(([,,, workSection, canvasContainer]) => {
         // Scene setup
         let scene, camera, renderer, controls;
         let cubes = [];
@@ -43,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
             scene = new THREE.Scene();
             
             // Get container dimensions
-            const workSection = document.querySelector('.work-section');
             const width = workSection.clientWidth;
             const height = workSection.clientHeight;
             
@@ -61,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderer.setPixelRatio(window.devicePixelRatio);
             
             // Add canvas to the canvas div
-            const canvasContainer = document.querySelector('.canvas');
             canvasContainer.appendChild(renderer.domElement);
 
             // Add OrbitControls
@@ -107,6 +128,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         function createFileInput() {
+            if (!document.querySelector('.work-section')) {
+                console.error('Work section not found');
+                return;
+            }
+
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
             fileInput.id = 'image-upload';
@@ -123,14 +149,14 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(fileInput);
             container.appendChild(label);
             
-            document.querySelector('.work-section').appendChild(container);
+            const workSection = document.querySelector('.work-section');
+            workSection.appendChild(container);
             
             fileInput.addEventListener('change', handleFileUpload);
         }
 
         // Handle window resize
         function onWindowResize() {
-            const workSection = document.querySelector('.work-section');
             const width = workSection.clientWidth;
             const height = workSection.clientHeight;
 
@@ -284,6 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
         init();
         animate();
     }).catch(error => {
-        console.error('Error loading scripts:', error);
+        console.error('Error loading scripts or finding elements:', error);
     });
 }); 
