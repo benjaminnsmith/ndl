@@ -155,25 +155,46 @@ async function init() {
 }
 
 function createFileInput(workSection) {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.id = 'image-upload';
-    fileInput.accept = 'image/*';
-    fileInput.style.display = 'none';
-    
-    const label = document.createElement('label');
-    label.htmlFor = 'image-upload';
-    label.className = 'upload-label';
-    label.innerHTML = '<span class="upload-icon">📁</span>Choose Image';
-    
-    const container = document.createElement('div');
-    container.id = 'file-input';
-    container.appendChild(fileInput);
-    container.appendChild(label);
-    
-    workSection.appendChild(container);
-    
-    fileInput.addEventListener('change', handleFileUpload);
+    if (!workSection) {
+        console.error('Work section not found');
+        return;
+    }
+
+    try {
+        // Create file input element
+        const fileInput = document.createElement('input');
+        if (!fileInput) {
+            console.error('Failed to create file input element');
+            return;
+        }
+
+        // Configure file input
+        fileInput.type = 'file';
+        fileInput.id = 'image-upload';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+
+        // Create label
+        const label = document.createElement('label');
+        label.htmlFor = 'image-upload';
+        label.className = 'upload-label';
+        label.innerHTML = '<span class="upload-icon">📁</span>Choose Image';
+
+        // Create container
+        const container = document.createElement('div');
+        container.id = 'file-input';
+
+        // Add event listener before appending to DOM
+        fileInput.addEventListener('change', handleFileUpload);
+
+        // Append elements
+        container.appendChild(fileInput);
+        container.appendChild(label);
+        workSection.appendChild(container);
+
+    } catch (error) {
+        console.error('Error creating file input:', error);
+    }
 }
 
 function handleFileUpload(e) {
