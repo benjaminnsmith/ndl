@@ -172,7 +172,15 @@ function createFileInput(workSection) {
         }
 
         try {
-            // Create file input element
+            // Create container first
+            const container = document.createElement('div');
+            if (!container) {
+                reject(new Error('Failed to create container element'));
+                return;
+            }
+            container.id = 'file-input';
+
+            // Create and verify file input
             const fileInput = document.createElement('input');
             if (!fileInput) {
                 reject(new Error('Failed to create file input element'));
@@ -185,22 +193,31 @@ function createFileInput(workSection) {
             fileInput.accept = 'image/*';
             fileInput.style.display = 'none';
 
-            // Create label
+            // Create and verify label
             const label = document.createElement('label');
+            if (!label) {
+                reject(new Error('Failed to create label element'));
+                return;
+            }
             label.htmlFor = 'image-upload';
             label.className = 'upload-label';
             label.innerHTML = '<span class="upload-icon">📁</span>Choose Image';
 
-            // Create container
-            const container = document.createElement('div');
-            container.id = 'file-input';
-
-            // Add event listener before appending to DOM
-            fileInput.addEventListener('change', handleFileUpload);
-
-            // Append elements
+            // First append file input to container
             container.appendChild(fileInput);
+            
+            // Now that we're sure fileInput is in the DOM, add the event listener
+            if (fileInput instanceof HTMLElement) {
+                fileInput.addEventListener('change', handleFileUpload);
+            } else {
+                reject(new Error('File input is not a valid HTML element'));
+                return;
+            }
+
+            // Append remaining elements
             container.appendChild(label);
+            
+            // Finally append to work section
             workSection.appendChild(container);
 
             resolve(container);
@@ -210,19 +227,39 @@ function createFileInput(workSection) {
     });
 }
 
+// Handle file upload with error checking
 function handleFileUpload(e) {
-    const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = function() {
-                processImage(img);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
+    if (!e || !e.target || !(e.target instanceof HTMLInputElement)) {
+        console.error('Invalid event or target in handleFileUpload');
+        return;
     }
+
+    const file = e.target.files?.[0];
+    if (!file) {
+        console.error('No file selected');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        if (!event || !event.target || !event.target.result) {
+            console.error('Failed to read file');
+            return;
+        }
+
+        const img = new Image();
+        img.onload = function() {
+            processImage(img);
+        };
+        img.onerror = function() {
+            console.error('Failed to load image');
+        };
+        img.src = String(event.target.result);
+    };
+    reader.onerror = function() {
+        console.error('Failed to read file');
+    };
+    reader.readAsDataURL(file);
 }
 
 // Process image and create depth map
