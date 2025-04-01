@@ -30,8 +30,8 @@ const waitForElement = (selector) => {
     });
 };
 
-// Wait for DOM to be ready
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize everything once dependencies are loaded
+const initialize = () => {
     // Wait for all scripts and work-section to load before initializing
     Promise.all([
         loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'),
@@ -57,6 +57,16 @@ document.addEventListener('DOMContentLoaded', () => {
             colorMode: 'monochrome',
             customColor: '#ffffff'
         };
+
+        // Handle window resize
+        function onWindowResize() {
+            const width = workSection.clientWidth;
+            const height = workSection.clientHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        }
 
         // Initialize the scene
         function init() {
@@ -117,13 +127,14 @@ document.addEventListener('DOMContentLoaded', () => {
             colorModeFolder.add(params, 'colorMode', ['monochrome', 'sampled', 'custom']);
             colorModeFolder.addColor(params, 'customColor');
 
-            // Handle window resize
-            window.addEventListener('resize', onWindowResize, false);
-            
             // Add file input if it doesn't exist
             if (!document.getElementById('image-upload')) {
                 createFileInput();
             }
+
+            // Add window resize listener
+            window.addEventListener('resize', onWindowResize, false);
+            
             console.log('Initialization complete');
         }
 
@@ -153,16 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
             workSection.appendChild(container);
             
             fileInput.addEventListener('change', handleFileUpload);
-        }
-
-        // Handle window resize
-        function onWindowResize() {
-            const width = workSection.clientWidth;
-            const height = workSection.clientHeight;
-
-            camera.aspect = width / height;
-            camera.updateProjectionMatrix();
-            renderer.setSize(width, height);
         }
 
         // Process image and create depth map
@@ -312,4 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }).catch(error => {
         console.error('Error loading scripts or finding elements:', error);
     });
-}); 
+};
+
+// Start initialization when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+} else {
+    initialize();
+} 
