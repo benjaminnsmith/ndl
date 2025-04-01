@@ -22,10 +22,11 @@ function init() {
     // Scene setup
     scene = new THREE.Scene();
     
-    // Get container dimensions
+    // Get container dimensions from work-section
+    const workSection = document.querySelector('.work-section');
     const container = document.getElementById('canvas-container');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    const width = workSection.clientWidth;
+    const height = workSection.clientHeight;
     
     // Camera setup
     camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
@@ -58,6 +59,16 @@ function init() {
 
 // Setup GUI controls
 function setupGUI() {
+    // Create GUI container within work-section
+    const workSection = document.querySelector('.work-section');
+    const guiContainer = document.createElement('div');
+    guiContainer.style.position = 'absolute';
+    guiContainer.style.top = '20px';
+    guiContainer.style.right = '20px';
+    guiContainer.style.zIndex = '100';
+    workSection.appendChild(guiContainer);
+    
+    // Add GUI controls
     gui.add(params, 'cubeDensity', 0, 1).onChange(updateCubes);
     gui.add(params, 'rotationSpeed', 0, 2);
     gui.add(params, 'pulseStrength', 0, 1);
@@ -68,13 +79,16 @@ function setupGUI() {
     const colorModeFolder = gui.addFolder('Color Settings');
     colorModeFolder.add(params, 'colorMode', ['monochrome', 'sampled', 'custom']);
     colorModeFolder.addColor(params, 'customColor');
+
+    // Move GUI container to work-section
+    guiContainer.appendChild(gui.domElement);
 }
 
 // Handle window resize
 function onWindowResize() {
-    const container = document.getElementById('canvas-container');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    const workSection = document.querySelector('.work-section');
+    const width = workSection.clientWidth;
+    const height = workSection.clientHeight;
 
     // Update camera
     camera.aspect = width / height;
