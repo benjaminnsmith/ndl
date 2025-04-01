@@ -32,8 +32,13 @@ function init() {
     camera.position.z = 5;
 
     // Renderer setup
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true,
+        preserveDrawingBuffer: true
+    });
     renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
     // Add OrbitControls
@@ -71,9 +76,13 @@ function onWindowResize() {
     const width = container.clientWidth;
     const height = container.clientHeight;
 
+    // Update camera
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
+
+    // Update renderer
     renderer.setSize(width, height);
+    renderer.setPixelRatio(window.devicePixelRatio);
 }
 
 // Process image and create depth map
