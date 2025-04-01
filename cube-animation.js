@@ -65,136 +65,149 @@ const loadScripts = async () => {
 
 // Initialize the scene
 async function init() {
-    // Wait for scripts to load
-    const scriptsLoaded = await loadScripts();
-    if (!scriptsLoaded) return;
-
-    // Get required elements
-    const workSection = document.querySelector('.work-section');
-    const canvasContainer = document.querySelector('.canvas');
-    
-    if (!workSection || !canvasContainer) {
-        console.error('Required elements not found');
-        return;
-    }
-
-    console.log('Initializing scene...');
-    
-    // Scene setup
-    scene = new THREE.Scene();
-    
-    // Get container dimensions
-    const width = workSection.clientWidth;
-    const height = workSection.clientHeight;
-    
-    // Camera setup
-    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
-    camera.position.z = 5;
-
-    // Renderer setup
-    renderer = new THREE.WebGLRenderer({ 
-        antialias: true, 
-        alpha: true,
-        preserveDrawingBuffer: true
-    });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    
-    // Add canvas to the canvas div
-    canvasContainer.appendChild(renderer.domElement);
-
-    // Add OrbitControls
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = false;
-    controls.enablePan = true;
-    controls.enableRotate = true;
-
-    // Limit controls
-    controls.target.set(0, 0, 0);
-    controls.minDistance = 2;
-    controls.maxDistance = 10;
-    controls.maxPolarAngle = Math.PI / 2;
-
-    // Setup GUI
-    const gui = new dat.GUI({ autoPlace: false });
-    gui.domElement.style.position = 'absolute';
-    gui.domElement.style.top = '20px';
-    gui.domElement.style.right = '20px';
-    workSection.appendChild(gui.domElement);
-
-    gui.add(params, 'cubeDensity', 0, 1).onChange(updateCubes);
-    gui.add(params, 'rotationSpeed', 0, 2);
-    gui.add(params, 'pulseStrength', 0, 1);
-    gui.add(params, 'zDepthMultiplier', 0, 2);
-    gui.add(params, 'cubeSize', 0.1, 2);
-    gui.add(params, 'contrastThreshold', 0, 1).onChange(updateCubes);
-    
-    const colorModeFolder = gui.addFolder('Color Settings');
-    colorModeFolder.add(params, 'colorMode', ['monochrome', 'sampled', 'custom']);
-    colorModeFolder.addColor(params, 'customColor');
-
-    // Create file input
-    createFileInput(workSection);
-
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        const width = workSection.clientWidth;
-        const height = workSection.clientHeight;
-
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(width, height);
-    });
-
-    // Start animation
-    animate();
-    
-    console.log('Initialization complete');
-}
-
-function createFileInput(workSection) {
-    if (!workSection) {
-        console.error('Work section not found');
-        return;
-    }
-
     try {
-        // Create file input element
-        const fileInput = document.createElement('input');
-        if (!fileInput) {
-            console.error('Failed to create file input element');
+        // Wait for scripts to load
+        const scriptsLoaded = await loadScripts();
+        if (!scriptsLoaded) {
+            console.error('Failed to load required scripts');
             return;
         }
 
-        // Configure file input
-        fileInput.type = 'file';
-        fileInput.id = 'image-upload';
-        fileInput.accept = 'image/*';
-        fileInput.style.display = 'none';
+        // Wait for required elements
+        const [workSection, canvasContainer] = await Promise.all([
+            waitForElement('.work-section'),
+            waitForElement('.canvas')
+        ]);
 
-        // Create label
-        const label = document.createElement('label');
-        label.htmlFor = 'image-upload';
-        label.className = 'upload-label';
-        label.innerHTML = '<span class="upload-icon">📁</span>Choose Image';
+        if (!workSection || !canvasContainer) {
+            console.error('Required elements not found after waiting');
+            return;
+        }
 
-        // Create container
-        const container = document.createElement('div');
-        container.id = 'file-input';
+        console.log('Initializing scene...');
+        
+        // Scene setup
+        scene = new THREE.Scene();
+        
+        // Get container dimensions
+        const width = workSection.clientWidth;
+        const height = workSection.clientHeight;
+        
+        // Camera setup
+        camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+        camera.position.z = 5;
 
-        // Add event listener before appending to DOM
-        fileInput.addEventListener('change', handleFileUpload);
+        // Renderer setup
+        renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            preserveDrawingBuffer: true
+        });
+        renderer.setSize(width, height);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        
+        // Add canvas to the canvas div
+        canvasContainer.appendChild(renderer.domElement);
 
-        // Append elements
-        container.appendChild(fileInput);
-        container.appendChild(label);
-        workSection.appendChild(container);
+        // Add OrbitControls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enableZoom = false;
+        controls.enablePan = true;
+        controls.enableRotate = true;
 
+        // Limit controls
+        controls.target.set(0, 0, 0);
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+        controls.maxPolarAngle = Math.PI / 2;
+
+        // Setup GUI
+        const gui = new dat.GUI({ autoPlace: false });
+        gui.domElement.style.position = 'absolute';
+        gui.domElement.style.top = '20px';
+        gui.domElement.style.right = '20px';
+        workSection.appendChild(gui.domElement);
+
+        gui.add(params, 'cubeDensity', 0, 1).onChange(updateCubes);
+        gui.add(params, 'rotationSpeed', 0, 2);
+        gui.add(params, 'pulseStrength', 0, 1);
+        gui.add(params, 'zDepthMultiplier', 0, 2);
+        gui.add(params, 'cubeSize', 0.1, 2);
+        gui.add(params, 'contrastThreshold', 0, 1).onChange(updateCubes);
+        
+        const colorModeFolder = gui.addFolder('Color Settings');
+        colorModeFolder.add(params, 'colorMode', ['monochrome', 'sampled', 'custom']);
+        colorModeFolder.addColor(params, 'customColor');
+
+        // Create file input
+        await createFileInput(workSection);
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const width = workSection.clientWidth;
+            const height = workSection.clientHeight;
+
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+        });
+
+        // Start animation
+        animate();
+        
+        console.log('Initialization complete');
     } catch (error) {
-        console.error('Error creating file input:', error);
+        console.error('Error during initialization:', error);
     }
+}
+
+// Modified createFileInput to return a promise
+function createFileInput(workSection) {
+    return new Promise((resolve, reject) => {
+        if (!workSection) {
+            reject(new Error('Work section not found'));
+            return;
+        }
+
+        try {
+            // Create file input element
+            const fileInput = document.createElement('input');
+            if (!fileInput) {
+                reject(new Error('Failed to create file input element'));
+                return;
+            }
+
+            // Configure file input
+            fileInput.type = 'file';
+            fileInput.id = 'image-upload';
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+
+            // Create label
+            const label = document.createElement('label');
+            label.htmlFor = 'image-upload';
+            label.className = 'upload-label';
+            label.innerHTML = '<span class="upload-icon">📁</span>Choose Image';
+
+            // Create container
+            const container = document.createElement('div');
+            container.id = 'file-input';
+
+            // Add event listener before appending to DOM
+            fileInput.addEventListener('change', handleFileUpload);
+
+            // Append elements
+            container.appendChild(fileInput);
+            container.appendChild(label);
+            workSection.appendChild(container);
+
+            resolve(container);
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
 
 function handleFileUpload(e) {
@@ -344,7 +357,13 @@ function animate() {
 
 // Start initialization when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', () => {
+        init().catch(error => {
+            console.error('Failed to initialize:', error);
+        });
+    });
 } else {
-    init();
+    init().catch(error => {
+        console.error('Failed to initialize:', error);
+    });
 } 
