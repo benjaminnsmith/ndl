@@ -3,6 +3,7 @@ let scene, camera, renderer, controls;
 let cubes = [];
 let depthMap = null;
 let imageData = null;
+let workSection;
 
 // GUI controls
 const gui = new dat.GUI();
@@ -19,12 +20,23 @@ const params = {
 
 // Initialize the scene
 function init() {
+    // Get work section
+    workSection = document.querySelector('.work-section');
+    if (!workSection) {
+        console.error('Work section not found');
+        return;
+    }
+
     // Scene setup
     scene = new THREE.Scene();
     
-    // Get container dimensions from work-section
-    const workSection = document.querySelector('.work-section');
+    // Get container dimensions
     const container = document.getElementById('canvas');
+    if (!container) {
+        console.error('Canvas container not found');
+        return;
+    }
+    
     const width = workSection.clientWidth;
     const height = workSection.clientHeight;
     
@@ -50,6 +62,12 @@ function init() {
     controls.enablePan = true;
     controls.enableRotate = true;
 
+    // Limit controls to work section
+    controls.target.set(0, 0, 0);
+    controls.minDistance = 2;
+    controls.maxDistance = 10;
+    controls.maxPolarAngle = Math.PI / 2;
+
     // Setup GUI
     setupGUI();
 
@@ -60,7 +78,6 @@ function init() {
 // Setup GUI controls
 function setupGUI() {
     // Create GUI container within work-section
-    const workSection = document.querySelector('.work-section');
     const guiContainer = document.createElement('div');
     guiContainer.style.position = 'absolute';
     guiContainer.style.top = '20px';
@@ -86,7 +103,8 @@ function setupGUI() {
 
 // Handle window resize
 function onWindowResize() {
-    const workSection = document.querySelector('.work-section');
+    if (!workSection) return;
+    
     const width = workSection.clientWidth;
     const height = workSection.clientHeight;
 
