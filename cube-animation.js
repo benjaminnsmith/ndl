@@ -20,12 +20,15 @@ const params = {
 
 // Initialize the scene
 function init() {
+    console.log('Initializing scene...');
+    
     // Get work section
     workSection = document.querySelector('.work-section');
     if (!workSection) {
-        console.error('Work section not found');
+        console.error('Work section not found. Make sure you have a div with class "work-section"');
         return;
     }
+    console.log('Work section found:', workSection);
 
     // Scene setup
     scene = new THREE.Scene();
@@ -33,12 +36,14 @@ function init() {
     // Get container dimensions
     const container = document.getElementById('canvas');
     if (!container) {
-        console.error('Canvas container not found');
+        console.error('Canvas container not found. Make sure you have a div with id "canvas"');
         return;
     }
+    console.log('Canvas container found:', container);
     
     const width = workSection.clientWidth;
     const height = workSection.clientHeight;
+    console.log('Container dimensions:', width, height);
     
     // Camera setup
     camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
@@ -53,6 +58,7 @@ function init() {
     renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
+    console.log('Renderer created and added to container');
 
     // Add OrbitControls
     controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -67,12 +73,14 @@ function init() {
     controls.minDistance = 2;
     controls.maxDistance = 10;
     controls.maxPolarAngle = Math.PI / 2;
+    console.log('Controls initialized');
 
     // Setup GUI
     setupGUI();
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize, false);
+    console.log('Initialization complete');
 }
 
 // Setup GUI controls
